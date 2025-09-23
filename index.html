@@ -4,70 +4,104 @@
   <meta charset="UTF-8">
   <title>Goated Chat</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #eee;
-      margin: 0;
-      padding: 0;
-    }
-    #chat {
-      height: 300px;
-      overflow-y: auto;
-      border: 1px solid #444;
-      padding: 10px;
-      background: #222;
-    }
-    #inputBox {
-      width: 80%;
-      padding: 5px;
-      border: 1px solid #444;
-      background: #111;
-      color: #eee;
-    }
-    #sendBtn {
-      padding: 6px 12px;
-      background: #444;
-      border: none;
-      color: #eee;
-      cursor: pointer;
-    }
-    #sendBtn:hover {
-      background: #666;
-    }
+    body { font-family: Arial, sans-serif; background:#111; color:#eee; text-align:center; }
+    #login, #chat { display:none; }
+    #chatBox { height:300px; overflow-y:auto; border:1px solid #444; padding:10px; background:#222; text-align:left; }
+    input { margin:5px; padding:5px; background:#222; color:#eee; border:1px solid #555; }
+    button { padding:6px 12px; background:#444; border:none; color:#eee; cursor:pointer; margin:5px; }
+    button:hover { background:#666; }
+    #error { color:red; margin-top:10px; }
   </style>
 </head>
 <body>
-  <h2>Goated Chat (Pt 1 HTML)</h2>
-  <div id="chat"></div>
-  <input type="text" id="inputBox" placeholder="Type a message...">
-  <button id="sendBtn">Send</button>
+  <!-- Login Screen -->
+  <div id="login">
+    <h2>Goated Chat Login</h2>
+    <input type="text" id="username" placeholder="Username"><br>
+    <input type="password" id="password" placeholder="Password"><br>
+    <button onclick="login()">Login</button>
+    <div id="error"></div>
+  </div>
+
+  <!-- Chat Screen -->
+  <div id="chat">
+    <h2>Goated Chat</h2>
+    <button onclick="logout()">Logout</button>
+    <div id="chatBox"></div>
+    <input type="text" id="inputBox" placeholder="Type a message...">
+    <button id="sendBtn">Send</button>
+  </div>
 
   <script>
-    const chatBox = document.getElementById("chat");
-    const inputBox = document.getElementById("inputBox");
-    const sendBtn = document.getElementById("sendBtn");
+    const accounts = {
+      Jack: "DDD67",
+      Tyler: "hacker2",
+      Kirus: "hacker67",
+      Harrison: "eagle67",
+      Cedric: "zigzag67",
+      Harry: "cheeseboy"
+    };
+
+    let messages = JSON.parse(localStorage.getItem("chatMessages")) || [];
+    let currentUser = null;
+
+    function login() {
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      if (accounts[user] && accounts[user] === pass) {
+        currentUser = user;
+        localStorage.setItem("loggedUser", user);
+        showChat();
+      } else {
+        document.getElementById("error").textContent = "Wrong username or password!";
+      }
+    }
+
+    function showChat() {
+      document.getElementById("login").style.display = "none";
+      document.getElementById("chat").style.display = "block";
+      const chatBox = document.getElementById("chatBox");
+      chatBox.innerHTML = "";
+      messages.forEach(m => addMessage(m.user, m.text));
+    }
 
     function addMessage(user, text) {
+      const chatBox = document.getElementById("chatBox");
       const msg = document.createElement("div");
       msg.textContent = user + ": " + text;
       chatBox.appendChild(msg);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    sendBtn.addEventListener("click", () => {
+    document.getElementById("sendBtn").addEventListener("click", () => {
+      const inputBox = document.getElementById("inputBox");
       const text = inputBox.value.trim();
-      if (text !== "") {
-        addMessage("You", text);
+      if (text !== "" && currentUser) {
+        addMessage(currentUser, text);
+        messages.push({user: currentUser, text});
+        localStorage.setItem("chatMessages", JSON.stringify(messages));
         inputBox.value = "";
       }
     });
 
-    inputBox.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        sendBtn.click();
-      }
+    document.getElementById("inputBox").addEventListener("keydown", e => {
+      if (e.key === "Enter") document.getElementById("sendBtn").click();
     });
+
+    function logout() {
+      localStorage.removeItem("loggedUser");
+      currentUser = null;
+      document.getElementById("chat").style.display = "none";
+      document.getElementById("login").style.display = "block";
+    }
+
+    // Auto-login if user already logged in before
+    if (localStorage.getItem("loggedUser")) {
+      currentUser = localStorage.getItem("loggedUser");
+      showChat();
+    } else {
+      document.getElementById("login").style.display = "block";
+    }
   </script>
 </body>
 </html>
