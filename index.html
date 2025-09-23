@@ -72,127 +72,97 @@
 </body>
 </html>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Goated Chat Login</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#111; color:#eee; text-align:center; }
+    input { margin:5px; padding:5px; background:#222; color:#eee; border:1px solid #555; }
+    button { padding:6px 12px; background:#444; border:none; color:#eee; cursor:pointer; }
+    button:hover { background:#666; }
+    #error { color:red; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <h2>Goated Chat Login</h2>
+  <input type="text" id="username" placeholder="Username"><br>
+  <input type="password" id="password" placeholder="Password"><br>
+  <button onclick="login()">Login</button>
+  <div id="error"></div>
 
-loadChatHistory()
+  <script>
+    const accounts = {
+      Jack: "DDD67",
+      Tyler: "hacker2",
+      Kirus: "hacker67",
+      Harrison: "eagle67",
+      Cedric: "zigzag67",
+      Harry: "cheeseboy"
+    };
 
--- Function to login player
-local function loginPlayer(player, username, password)
-    if accounts[username] and accounts[username] == password then
-        loggedIn[player.UserId] = username
-        return true
-    else
-        return false
-    end
-end
+    function login() {
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      if (accounts[user] && accounts[user] === pass) {
+        localStorage.setItem("loggedUser", user);
+        window.location.href = "chat.html"; // go to Pt 3
+      } else {
+        document.getElementById("error").textContent = "Wrong username or password!";
+      }
+    }
+  </script>
+</body>
+</html>
 
--- Function to handle chat messages
-local function onChat(player, message)
-    if not loggedIn[player.UserId] then
-        player:Kick("You must login before chatting!")
-        return
-    end
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Goated Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#111; color:#eee; }
+    #chat { height:300px; overflow-y:auto; border:1px solid #444; padding:10px; background:#222; }
+    #inputBox { width:80%; padding:5px; background:#111; color:#eee; border:1px solid #444; }
+    #sendBtn { padding:6px 12px; background:#444; border:none; color:#eee; cursor:pointer; }
+    #sendBtn:hover { background:#666; }
+  </style>
+</head>
+<body>
+  <h2>Goated Chat (Storage Enabled)</h2>
+  <div id="chat"></div>
+  <input type="text" id="inputBox" placeholder="Type a message...">
+  <button id="sendBtn">Send</button>
 
-    local username = loggedIn[player.UserId]
-    local entry = username .. ": " .. message
-    table.insert(chatHistory, entry)
+  <script>
+    const chatBox = document.getElementById("chat");
+    const inputBox = document.getElementById("inputBox");
+    const sendBtn = document.getElementById("sendBtn");
+    const user = localStorage.getItem("loggedUser") || "Guest";
 
-    if #chatHistory > 100 then
-        table.remove(chatHistory, 1)
-    end
+    // Load saved chats
+    let messages = JSON.parse(localStorage.getItem("chatMessages")) || [];
+    messages.forEach(m => addMessage(m.user, m.text));
 
-    saveChatHistory()
+    function addMessage(user, text) {
+      const msg = document.createElement("div");
+      msg.textContent = user + ": " + text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-    for _, plr in pairs(Players:GetPlayers()) do
-        plr:SendNotification({
-            Title = "Goated Chat",
-            Text = entry,
-            Duration = 5
-        })
-    end
-end
+    sendBtn.addEventListener("click", () => {
+      const text = inputBox.value.trim();
+      if (text !== "") {
+        addMessage(user, text);
+        messages.push({user, text});
+        localStorage.setItem("chatMessages", JSON.stringify(messages));
+        inputBox.value = "";
+      }
+    });
 
--- Event when player joins
-Players.PlayerAdded:Connect(function(player)
-    player.Chatted:Connect(function(message)
-        onChat(player, message)
-    end)
-
-    player.CharacterAdded:Connect(function()
-        player:LoadCharacter()
-    end)
-
-    player:GetPropertyChangedSignal("Parent"):Connect(function()
-        if player.Parent == nil then
-            loggedIn[player.UserId] = nil
-        end
-    end)
-end)
-
--- RemoteEvent for login
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local loginEvent = Instance.new("RemoteEvent")
-loginEvent.Name = "LoginEvent"
-loginEvent.Parent = ReplicatedStorage
-
-loginEvent.OnServerEvent:Connect(function(player, username, password)
-    if loginPlayer(player, username, password) then
-        player:SendNotification({
-            Title = "Login Successful",
-            Text = "Welcome " .. username,
-            Duration = 5
-        })
-    else
-        player:Kick("Invalid username or password!")
-    end
-end)
-
--- Function to view past chat history
-local function showHistory(player)
-    if not loggedIn[player.UserId] then return end
-
-    for _, entry in ipairs(chatHistory) do
-        player:SendNotification({
-            Title = "Chat History",
-            Text = entry,
-            Duration = 3
-        })
-    end
-end
-
--- RemoteEvent for history
-local historyEvent = Instance.new("RemoteEvent")
-historyEvent.Name = "HistoryEvent"
-historyEvent.Parent = ReplicatedStorage
-
-historyEvent.OnServerEvent:Connect(function(player)
-    showHistory(player)
-end)
-
--- Cleanup when players leave
-Players.PlayerRemoving:Connect(function(player)
-    loggedIn[player.UserId] = nil
-    saveChatHistory()
-end)
-
--- Safety save every 60 seconds
-while true do
-    task.wait(60)
-    saveChatHistory()
-end
-
---[[ 
-HOW TO USE:
-1. Players must login using the RemoteEvent "LoginEvent"
-   Example: FireServer("LoginEvent", "Jack", "DDD67")
-2. Once logged in, they can chat in-game normally.
-3. To see saved history, FireServer("HistoryEvent")
-4. Chats are saved across sessions using DataStore.
-5. If history gets too long, it auto-trims to 100 messages.
-6. Accounts are pre-set: Jack, Tyler, Kirus, Harrison, Cedric, Harry.
-7. Invalid login = auto kick.
-8. No sign-up button included as requested.
-9. Players who logout/leave get auto-cleared from login memory.
-10. This completes the script in chunks for easy pasting.
-]]
-
-print("Goated Multi-User Chat Script Loaded Successfully")
+    inputBox.addEventListener("keydown", e => { if (e.key==="Enter") sendBtn.click(); });
+  </script>
+</body>
+</html>
