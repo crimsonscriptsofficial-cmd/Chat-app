@@ -1,120 +1,166 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Simple Chat App</title>
-  <style>
-    body {
-      font-family: <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>My Chat App</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #111; color: #eee; text-align: center; }
-    #loginDiv, #chatDiv { max-width: 400px; margin: 50px auto; padding: 20px; background: #222; border-radius: 10px; }
-    input, button { margin: 5px; padding: 10px; width: 90%; border: none; border-radius: 5px; }
-    button { background: #28a745; color: white; cursor: pointer; }
-    #messages { height: 300px; overflow-y: auto; text-align: left; margin-bottom: 10px; background: #333; padding: 10px; border-radius: 5px; }
-    .msg { margin: 5px 0; padding: 5px; background: #444; border-radius: 5px; }
-    .msg strong { color: #28a745; }
-  </style>
-</head>
-<body>
-  <h2>🔥 kirus's chat</h2>
+-- Goated Multi-User Chat Script (Part 1)
+-- This script includes login system, accounts, and chat storage.
+-- Paste each part in order. Do not skip parts.
 
-  <!-- Login -->
-  <div id="loginDiv">
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <button onclick="signup()">Sign Up</button>
-  </div>
+local Players = game:GetService("Players")
+local DataStoreService = game:GetService("DataStoreService")
+local ChatStore = DataStoreService:GetDataStore("GoatedChatStore")
 
-  <!-- Chat -->
-  <div id="chatDiv" style="display:none;">
-    <p>Welcome, <span id="userEmail"></span> <button onclick="logout()">Logout</button></p>
-    <div id="messages"></div>
-    <input id="msgInput" placeholder="Type a message">
-    <button onclick="sendMessage()">Send</button>
-  </div>
+local accounts = {
+    Jack = "DDD67",
+    Tyler = "hacker2",
+    Kirus = "hacker67",
+    Harrison = "eagle67",
+    Cedric = "zigzag67",
+    Harry = "cheeseboy"
+}
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+local loggedIn = {}
+local chatHistory = {}
 
-  <script>
-    // TODO: Replace with your Firebase config
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
+-- Function to save chat history
+local function saveChatHistory()
+    local success, err = pcall(function()
+        ChatStore:SetAsync("history", chatHistory)
+    end)
+    if not success then
+        warn("Failed to save chat: " .. err)
+    end
+end
 
-    const auth = firebase.auth();
-    const db = firebase.database();
+-- Function to load chat history
+local function loadChatHistory()
+    local data
+    local success, err = pcall(function()
+        data = ChatStore:GetAsync("history")
+    end)
+    if success and data then
+        chatHistory = data
+    else
+        chatHistory = {}
+    end
+end
 
-    // Auth
-    function signup() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      auth.createUserWithEmailAndPassword(email, password)
-        .catch(e => alert(e.message));
-    }
+loadChatHistory()
 
-    function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email, password)
-        .catch(e => alert(e.message));
-    }
+-- Function to login player
+local function loginPlayer(player, username, password)
+    if accounts[username] and accounts[username] == password then
+        loggedIn[player.UserId] = username
+        return true
+    else
+        return false
+    end
+end
 
-    function logout() {
-      auth.signOut();
-    }
+-- Function to handle chat messages
+local function onChat(player, message)
+    if not loggedIn[player.UserId] then
+        player:Kick("You must login before chatting!")
+        return
+    end
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById("loginDiv").style.display = "none";
-        document.getElementById("chatDiv").style.display = "block";
-        document.getElementById("userEmail").innerText = user.email;
-        loadMessages();
-      } else {
-        document.getElementById("loginDiv").style.display = "block";
-        document.getElementById("chatDiv").style.display = "none";
-      }
-    });
+    local username = loggedIn[player.UserId]
+    local entry = username .. ": " .. message
+    table.insert(chatHistory, entry)
 
-    // Chat
-    function sendMessage() {
-      const msg = document.getElementById("msgInput").value;
-      if (msg.trim() === "") return;
-      const user = auth.currentUser;
-      db.ref("messages").push({
-        user: user.email,
-        text: msg,
-        time: Date.now()
-      });
-      document.getElementById("msgInput").value = "";
-    }
+    if #chatHistory > 100 then
+        table.remove(chatHistory, 1)
+    end
 
-    function loadMessages() {
-      const messagesDiv = document.getElementById("messages");
-      db.ref("messages").on("child_added", snapshot => {
-        const data = snapshot.val();
-        const div = document.createElement("div");
-        div.classList.add("msg");
-        div.innerHTML = `<strong>${data.user}:</strong> ${data.text}`;
-        messagesDiv.appendChild(div);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      });
-    }
-  </script>
-</body>
-</html>
+    saveChatHistory()
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        plr:SendNotification({
+            Title = "Goated Chat",
+            Text = entry,
+            Duration = 5
+        })
+    end
+end
+
+-- Event when player joins
+Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        onChat(player, message)
+    end)
+
+    player.CharacterAdded:Connect(function()
+        player:LoadCharacter()
+    end)
+
+    player:GetPropertyChangedSignal("Parent"):Connect(function()
+        if player.Parent == nil then
+            loggedIn[player.UserId] = nil
+        end
+    end)
+end)
+
+-- RemoteEvent for login
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local loginEvent = Instance.new("RemoteEvent")
+loginEvent.Name = "LoginEvent"
+loginEvent.Parent = ReplicatedStorage
+
+loginEvent.OnServerEvent:Connect(function(player, username, password)
+    if loginPlayer(player, username, password) then
+        player:SendNotification({
+            Title = "Login Successful",
+            Text = "Welcome " .. username,
+            Duration = 5
+        })
+    else
+        player:Kick("Invalid username or password!")
+    end
+end)
+
+-- Function to view past chat history
+local function showHistory(player)
+    if not loggedIn[player.UserId] then return end
+
+    for _, entry in ipairs(chatHistory) do
+        player:SendNotification({
+            Title = "Chat History",
+            Text = entry,
+            Duration = 3
+        })
+    end
+end
+
+-- RemoteEvent for history
+local historyEvent = Instance.new("RemoteEvent")
+historyEvent.Name = "HistoryEvent"
+historyEvent.Parent = ReplicatedStorage
+
+historyEvent.OnServerEvent:Connect(function(player)
+    showHistory(player)
+end)
+
+-- Cleanup when players leave
+Players.PlayerRemoving:Connect(function(player)
+    loggedIn[player.UserId] = nil
+    saveChatHistory()
+end)
+
+-- Safety save every 60 seconds
+while true do
+    task.wait(60)
+    saveChatHistory()
+end
+
+--[[ 
+HOW TO USE:
+1. Players must login using the RemoteEvent "LoginEvent"
+   Example: FireServer("LoginEvent", "Jack", "DDD67")
+2. Once logged in, they can chat in-game normally.
+3. To see saved history, FireServer("HistoryEvent")
+4. Chats are saved across sessions using DataStore.
+5. If history gets too long, it auto-trims to 100 messages.
+6. Accounts are pre-set: Jack, Tyler, Kirus, Harrison, Cedric, Harry.
+7. Invalid login = auto kick.
+8. No sign-up button included as requested.
+9. Players who logout/leave get auto-cleared from login memory.
+10. This completes the script in chunks for easy pasting.
+]]
+
+print("Goated Multi-User Chat Script Loaded Successfully")
