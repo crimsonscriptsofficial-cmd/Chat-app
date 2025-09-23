@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Goated Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#111; color:#eee; }
+    #chat { height:300px; overflow-y:auto; border:1px solid #444; padding:10px; background:#222; }
+    #inputBox { width:80%; padding:5px; background:#111; color:#eee; border:1px solid #444; }
+    #sendBtn { padding:6px 12px; background:#444; border:none; color:#eee; cursor:pointer; }
+    #sendBtn:hover { background:#666; }
+  </style>
+</head>
+<body>
+  <h2>Goated Chat (Storage Enabled)</h2>
+  <div id="chat"></div>
+  <input type="text" id="inputBox" placeholder="Type a message...">
+  <button id="sendBtn">Send</button>
+
+  <script>
+    const chatBox = document.getElementById("chat");
+    const inputBox = document.getElementById("inputBox");
+    const sendBtn = document.getElementById("sendBtn");
+    const user = localStorage.getItem("loggedUser") || "Guest";
+
+    // Load saved chats
+    let messages = JSON.parse(localStorage.getItem("chatMessages")) || [];
+    messages.forEach(m => addMessage(m.user, m.text));
+
+    function addMessage(user, text) {
+      const msg = document.createElement("div");
+      msg.textContent = user + ": " + text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click", () => {
+      const text = inputBox.value.trim();
+      if (text !== "") {
+        addMessage(user, text);
+        messages.push({user, text});
+        localStorage.setItem("chatMessages", JSON.stringify(messages));
+        inputBox.value = "";
+      }
+    });
+
+    inputBox.addEventListener("keydown", e => { if (e.key==="Enter") sendBtn.click(); });
+  </script>
+</body>
+</html>
