@@ -1,45 +1,77 @@
--- Goated Multi-User Chat Script (Part 1)
--- This script includes login system, accounts, and chat storage.
--- Paste each part in order. Do not skip parts.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Goated Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      margin: 0;
+      padding: 0;
+    }
+    #chat {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #444;
+      padding: 10px;
+      background: #222;
+    }
+    #inputBox {
+      width: 80%;
+      padding: 5px;
+      border: 1px solid #444;
+      background: #111;
+      color: #eee;
+    }
+    #sendBtn {
+      padding: 6px 12px;
+      background: #444;
+      border: none;
+      color: #eee;
+      cursor: pointer;
+    }
+    #sendBtn:hover {
+      background: #666;
+    }
+  </style>
+</head>
+<body>
+  <h2>Goated Chat (Pt 1 HTML)</h2>
+  <div id="chat"></div>
+  <input type="text" id="inputBox" placeholder="Type a message...">
+  <button id="sendBtn">Send</button>
 
-local Players = game:GetService("Players")
-local DataStoreService = game:GetService("DataStoreService")
-local ChatStore = DataStoreService:GetDataStore("GoatedChatStore")
+  <script>
+    const chatBox = document.getElementById("chat");
+    const inputBox = document.getElementById("inputBox");
+    const sendBtn = document.getElementById("sendBtn");
 
-local accounts = {
-    Jack = "DDD67",
-    Tyler = "hacker2",
-    Kirus = "hacker67",
-    Harrison = "eagle67",
-    Cedric = "zigzag67",
-    Harry = "cheeseboy"
-}
+    function addMessage(user, text) {
+      const msg = document.createElement("div");
+      msg.textContent = user + ": " + text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-local loggedIn = {}
-local chatHistory = {}
+    sendBtn.addEventListener("click", () => {
+      const text = inputBox.value.trim();
+      if (text !== "") {
+        addMessage("You", text);
+        inputBox.value = "";
+      }
+    });
 
--- Function to save chat history
-local function saveChatHistory()
-    local success, err = pcall(function()
-        ChatStore:SetAsync("history", chatHistory)
-    end)
-    if not success then
-        warn("Failed to save chat: " .. err)
-    end
-end
+    inputBox.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        sendBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>
 
--- Function to load chat history
-local function loadChatHistory()
-    local data
-    local success, err = pcall(function()
-        data = ChatStore:GetAsync("history")
-    end)
-    if success and data then
-        chatHistory = data
-    else
-        chatHistory = {}
-    end
-end
 
 loadChatHistory()
 
